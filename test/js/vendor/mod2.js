@@ -8,3 +8,5 @@ module.exports = {
     mod: 'mod2',
     mod1: mod1
 };
+
+console.log('eval mod2');

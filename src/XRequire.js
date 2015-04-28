@@ -16,9 +16,9 @@
  */
 
 var rRequire = /require\s*\(\s*['"]\s*([^()"']+)\s*['"]\s*\)/g,
-    rJsfile = /\.js(\?.*)?$/,
     rlastSlash = /\/$/,
-    rotherFile = /(?:(\.css)|(\.htm[l]?))(\?.*)?$/;
+    rJsfile = /(\.js)(?:\?(.*))?/,
+    rotherFile = /(?:(\.css)|(\.htm[l]?))(?:\?(.*))?$/;
 
 //主文件
 var entrance,
@@ -35,13 +35,24 @@ var getBaseUrl = function (url) {
     return url ? url.replace(rlastSlash, '') + "/" : "";
 };
 
+var isJs = function (path) {
+
+    return !rotherFile.test(path);
+};
+
+var isCss = function (path) {
+
+    return rotherFile.exec(path) ? !!rotherFile.exec(path)[1] : false;
+};
+
+var isHtml = function (path) {
+
+    return rotherFile.exec(path) ? !!rotherFile.exec(path)[2] : false;
+};
+
 var require = function (path) {
 
-    var isJs = !rotherFile.test(path),
-        isCss = rotherFile.exec(path) ? !!rotherFile.exec(path)[1] : false,
-        isHtml = rotherFile.exec(path) ? !!rotherFile.exec(path)[2] : false;
-
-    if (isJs) {
+    if (isJs(path)) {
 
         var id = path.replace(rJsfile, ''),
             mod = module[id];
@@ -61,11 +72,11 @@ var require = function (path) {
         return mod.exports;
     }
     //加载css文件
-    else if (isCss) {
+    else if (isCss(path)) {
 
         loader.load([path]);
     }
-    else if (isHtml) {
+    else if (isHtml(path)) {
 
         return loader.load([path]);
     }
@@ -123,7 +134,7 @@ var fetchAll = function (path, root, depId) {
 
                     mod.deps.push(depModId);
 
-                    if (!rJsfile.test(depModId) && !rotherFile.test(depModId)) {
+                    if (!rJsfile.test(depModId) && isJs(depModId)) {
 
                         depModId = depModId + ".js";
                     }

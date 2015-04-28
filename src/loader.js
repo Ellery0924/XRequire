@@ -77,7 +77,7 @@ var loader = (function () {
             root = option.root ? option.root.replace(rlastSlash, '') + "/" : "";
 
         //计数器，在异步加载模式下使用
-        //scripts中存放了加载完成后的一些数据，根据模式的不同会有差别
+        //scripts中存放了加载完成后的一些数据，根据模式的不同会议
         var count = 0, scripts = [];
 
         var head = document.head || document.getElementsByTagName('head')[0];
