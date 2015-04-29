@@ -22,6 +22,14 @@ var loader = (function () {
         mod: 'async'
     };
 
+    //正则表达式
+    var rinvalidAttr = /^\s*(src|href|type|path|rel)\s*$/,
+    //是否为绝对路径
+        rabsoluteUrl = /^\s*(?:http:\/\/|\/|\.\/|\.\.\/)/,
+        rlastSlash = /\/$/;
+
+    var head = document.head || document.getElementsByTagName('head')[0];
+
     //config方法，设置option对象，实例方法
     var config = function (opt) {
 
@@ -45,8 +53,61 @@ var loader = (function () {
         })(text);
     };
 
+    //工具函数，向document.head中插入一个script标签，但阻止浏览器自动解析其中的js代码
+    var insertScriptNotEval = function (script, src, scriptText) {
+
+        head.appendChild(script);
+
+        //制止浏览器自动执行script标签中的js代码，所以临时将type设为text之后插入文本
+        script.type = "text";
+        script.text = scriptText;
+
+        //由于谷歌浏览器在修改script标签的src属性时依然会执行js代码，因此先设置src，后更改type
+        script.src = src;
+        //将type重置为text/javascript，不会执行其中的代码，在ff/chrome/ie7+下测试通过
+        script.type = "text/javascript";
+    };
+
+    //判断是否为绝对路径或者以http://开头的url
+    //如果是以上两种情况，忽略root而直接使用传入的绝对路径
+    //如果不是，则在所有传入的路径前加上root
+    var modifyPath = function (path) {
+
+        var root = option.root ? option.root.replace(rlastSlash, '') + "/" : "",
+            isAbsoluteUrl = rabsoluteUrl.test(path);
+
+        return isAbsoluteUrl ? path : root + path;
+    };
+
+    //工具函数，为script/link标签设置附加属性
+    var setAttr = function (file, script, isJs) {
+
+        for (var attr in file) {
+
+            if (file.hasOwnProperty(attr) && !rinvalidAttr.test(attr)) {
+
+                script.setAttribute(attr, isJs && attr === 'data-main' ? modifyPath(file[attr]) : file[attr]);
+            }
+        }
+    };
+
+    //工具函数，发送一个同步ajax请求
+    var sendSyncRequest = function (src) {
+
+        var xhrSync = new XMLHttpRequest();
+        xhrSync.open("GET", src, false);
+        xhrSync.send();
+
+        if (xhrSync.status !== 200) {
+
+            throw new Error(src + ':' + xhrSync.status + ' ' + xhrSync.statusText);
+        }
+
+        return xhrSync.responseText;
+    };
+
     //加载css/js文件，实例方法
-    var load = function () {
+    var loadJs = function () {
 
         //获取加载模式
         var mod = option.mod,
@@ -57,88 +118,19 @@ var loader = (function () {
         //特殊异步模式，下载脚本但不解析
             isAsyncNotEval = mod.search('async') !== -1 && mod.search('noteval') !== -1;
 
-        //正则表达式，js文件
-        var rjs = /\.js(\?.*)?$/,
-        //css/html文件
-            rother = /(?:(\.css)|(\.htm[l]?))(\?.*)?$/,
-        //不能够设置的属性
-            rinvalidAttr = /^\s*(src|href|type|path|rel)\s*$/,
-        //是否为绝对路径
-            rabsoluteUrl = /^\s*(?:http:\/\/|\/|\.\/|\.\.\/)/,
-            rlastSlash = /\/$/;
-
         //需要加载的文件数组，循环中对数组中每一个元素的引用，是否为绝对url
         var files = arguments[0], file,
         //js脚本加载完成后执行的回调
             callback = arguments[1] || function () {
                     console.log('all loaded');
-                },
-        //文件根路径，将结尾可能存在的/替换为""，然后再加上/以确保格式正确，如果没有设置根路径则设为空字符串
-            root = option.root ? option.root.replace(rlastSlash, '') + "/" : "";
+                };
 
         //计数器，在异步加载模式下使用
         //scripts中存放了加载完成后的一些数据，根据模式的不同会议
         var count = 0, scripts = [];
 
-        var head = document.head || document.getElementsByTagName('head')[0];
-
-        //工具函数，向document.head中插入一个script标签，但阻止浏览器自动解析其中的js代码
-        var insertScriptNotEval = function (script, src, scriptText) {
-
-            head.appendChild(script);
-
-            //制止浏览器自动执行script标签中的js代码，所以临时将type设为text之后插入文本
-            script.type = "text";
-            script.text = scriptText;
-
-            //由于谷歌浏览器在修改script标签的src属性时依然会执行js代码，因此先设置src，后更改type
-            script.src = src;
-            //将type重置为text/javascript，不会执行其中的代码，在ff/chrome/ie7+下测试通过
-            script.type = "text/javascript";
-        };
-
-        //判断是否为绝对路径或者以http://开头的url
-        //如果是以上两种情况，忽略root而直接使用传入的绝对路径
-        //如果不是，则在所有传入的路径前加上root
-        var modifyPath = function (path) {
-
-            var isAbsoluteUrl = rabsoluteUrl.test(path);
-
-            return isAbsoluteUrl ? path : root + path;
-        };
-
-        //工具函数，为script/link标签设置附加属性
-        var setAttr = function (file, script, isJs) {
-
-            for (var attr in file) {
-
-                if (file.hasOwnProperty(attr) && !rinvalidAttr.test(attr)) {
-
-                    script.setAttribute(attr, isJs && attr === 'data-main' ? modifyPath(file[attr]) : file[attr]);
-                }
-            }
-        };
-
-        //工具函数，发送一个同步ajax请求
-        var sendSyncRequest = function (src) {
-
-            var xhrSync = new XMLHttpRequest();
-            xhrSync.open("GET", src, false);
-            xhrSync.send();
-
-            if (xhrSync.status !== 200) {
-
-                throw new Error(src + ':' + xhrSync.status + ' ' + xhrSync.statusText);
-            }
-
-            return xhrSync.responseText;
-        };
-
-        var isJs, isCss, isHtml;
-
         //在循环中使用的变量
-        var script, src, resText,
-            link, href, rel;
+        var script, src, resText;
 
         for (var i = 0; i < files.length; i++) {
 
@@ -148,129 +140,96 @@ var loader = (function () {
             file = typeof file === 'object' ? file : {path: file};
             //修正src
             src = modifyPath(file.path);
+            script = document.createElement('script');
 
-            isJs = rjs.test(file.path);
-            isCss = rother.exec(file.path) ? !!rother.exec(file.path)[1] : false;
-            isHtml = rother.exec(file.path) ? !!rother.exec(file.path)[2] : false;
+            //同步加载模式
+            //通过同步ajax请求获得script标签的内容，然后用eval执行
+            //之后插入script标签，并且通过一些很奇怪的方法阻止浏览器自动解析新插入的script标签
+            if (isSync) {
 
-            //加载js文件
-            if (isJs) {
+                resText = sendSyncRequest(src);
 
-                script = document.createElement('script');
+                //手动解析js代码
+                globalEval(resText);
 
-                //同步加载模式
-                //通过同步ajax请求获得script标签的内容，然后用eval执行
-                //之后插入script标签，并且通过一些很奇怪的方法阻止浏览器自动解析新插入的script标签
-                if (isSync) {
+                insertScriptNotEval(script, src, resText);
 
-                    resText = sendSyncRequest(src);
+                scripts.push(script);
 
-                    //手动解析js代码
-                    globalEval(resText);
+                setAttr(file, script, true);
+            }
+            //异步加载
+            else {
 
-                    insertScriptNotEval(script, src, resText);
+                //普通异步模式，异步下载并解析脚本
+                if (isAsync) {
+
+                    script.src = src;
+                    count++;
+
+                    script.onload = script.onreadystatechange = function () {
+
+                        if (!this.readyState || this.readyState == "loaded" || this.readyState == "complete") {
+
+                            //每一个js完成解析后会将计数器减1
+                            //当计数器为0时触发结束回调
+                            if (--count === 0) {
+
+                                callback(scripts);
+                            }
+                        }
+                    };
+
+                    head.appendChild(script);
 
                     scripts.push(script);
 
                     setAttr(file, script, true);
                 }
-                //异步加载
-                else {
+                //特殊模式，异步下载脚本但不解析
+                else if (isAsyncNotEval) {
 
-                    //普通异步模式，异步下载并解析脚本
-                    if (isAsync) {
+                    count++;
+                    //创造一个局部作用域，消除可能的闭包导致的引用问题
+                    (function () {
 
-                        script.src = src;
-                        count++;
+                        var xhr = new XMLHttpRequest();
+                        //这里给xhr设置src和file是为了消除闭包导致的引用问题
+                        xhr.src = src;
+                        xhr.file = file;
+                        xhr.open("GET", src);
 
-                        script.onload = script.onreadystatechange = function () {
+                        xhr.onreadystatechange = function () {
 
-                            if (!this.readyState || this.readyState == "loaded" || this.readyState == "complete") {
+                            if (this.readyState == 4) {
 
-                                //每一个js完成解析后会将计数器减1
-                                //当计数器为0时触发结束回调
-                                if (--count === 0) {
+                                if (this.status === 200) {
 
-                                    callback(scripts);
+                                    //将获取的脚本文本加入scripts数组
+                                    scripts.push(this.responseText);
+
+                                    //向head插入一个script标签但制止浏览器自动解析脚本
+                                    var script = document.createElement('script');
+                                    insertScriptNotEval(script, this.src, this.responseText);
+
+                                    //所有脚本下载完成后触发回调
+                                    if (--count === 0) {
+
+                                        callback(scripts);
+                                    }
+
+                                    setAttr(this.file, script, true);
+                                }
+                                else {
+
+                                    throw new Error(this.src + ':' + this.status + ' ' + this.responseText);
                                 }
                             }
                         };
 
-                        head.appendChild(script);
-
-                        scripts.push(script);
-
-                        setAttr(file, script, true);
-                    }
-                    //特殊模式，异步下载脚本但不解析
-                    else if (isAsyncNotEval) {
-
-                        count++;
-                        //创造一个局部作用域，消除可能的闭包导致的引用问题
-                        (function () {
-
-                            var xhr = new XMLHttpRequest();
-                            //这里给xhr设置src和file是为了消除闭包导致的引用问题
-                            xhr.src = src;
-                            xhr.file = file;
-                            xhr.open("GET", src);
-
-                            xhr.onreadystatechange = function () {
-
-                                if (this.readyState == 4) {
-
-                                    if (this.status === 200) {
-
-                                        //将获取的脚本文本加入scripts数组
-                                        scripts.push(this.responseText);
-
-                                        //向head插入一个script标签但制止浏览器自动解析脚本
-                                        var script = document.createElement('script');
-                                        insertScriptNotEval(script, this.src, this.responseText);
-
-                                        //所有脚本下载完成后触发回调
-                                        if (--count === 0) {
-
-                                            callback(scripts);
-                                        }
-
-                                        setAttr(this.file, script, true);
-                                    }
-                                    else {
-
-                                        throw new Error(this.src + ':' + this.status + ' ' + this.responseText);
-                                    }
-                                }
-                            };
-
-                            xhr.send(null);
-                        })();
-                    }
+                        xhr.send(null);
+                    })();
                 }
-            }
-            //加载css文件，只支持异步加载，设置option.mod对css文件不起作用
-            else if (isCss) {
-
-                link = document.createElement('link');
-                rel = file.rel || "stylesheet";
-                link.href = src;
-                link.rel = rel;
-
-                setAttr(file, link, false);
-
-                head.appendChild(link);
-            }
-            //加载html文件，同步ajax请求
-            //只支持一次加载一个html模板
-            //不要和js混用
-            else if (isHtml) {
-
-                return sendSyncRequest(src);
-            }
-            //如果是非法的文件格式，报错
-            else {
-
-                throw new Error(file.path + "不支持的文件格式！");
             }
         }
 
@@ -280,9 +239,31 @@ var loader = (function () {
         }
     };
 
+    var loadCss = function (file) {
+
+        file = typeof file === 'object' ? file : {path: file};
+
+        var link = document.createElement('link'),
+            rel = file.rel || "stylesheet";
+
+        link.href = modifyPath(file.path);
+        link.rel = rel;
+
+        setAttr(file, link, false);
+
+        head.appendChild(link);
+    };
+
+    var loadHtml = function (path) {
+
+        return sendSyncRequest(modifyPath(path));
+    };
+
     return {
         config: config,
-        load: load,
+        loadJs: loadJs,
+        loadCss: loadCss,
+        loadHtml: loadHtml,
         globalEval: globalEval
     };
 })();

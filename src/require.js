@@ -17,8 +17,8 @@
 
 var rRequire = /require\s*\(\s*['"]\s*([^()"']+)\s*['"]\s*\)/g,
     rlastSlash = /\/$/,
-    rJsfile = /(\.js)(?:\?(.*))?/,
-    rotherFile = /(?:(\.css)|(\.htm[l]?))(?:\?(.*))?$/;
+    rJsfile = /\.js$/,
+    rotherFile = /(?:(\.css)|(\.html))$/;
 
 //主文件
 var entrance,
@@ -30,21 +30,25 @@ var entrance,
     depRelations = [],
     baseUrl;
 
+//修正baseUrl
 var getBaseUrl = function (url) {
 
     return url ? url.replace(rlastSlash, '') + "/" : "";
 };
 
+//判断是否是js文件，如果文件不以.css/.html/.htm结尾，都认为是js文件
 var isJs = function (path) {
 
     return !rotherFile.test(path);
 };
 
+//判断是否是css文件
 var isCss = function (path) {
 
     return rotherFile.exec(path) ? !!rotherFile.exec(path)[1] : false;
 };
 
+//判断是否是html文件
 var isHtml = function (path) {
 
     return rotherFile.exec(path) ? !!rotherFile.exec(path)[2] : false;
@@ -74,11 +78,12 @@ var require = function (path) {
     //加载css文件
     else if (isCss(path)) {
 
-        loader.load([path]);
+        loader.loadCss(path);
     }
+    //加载html文件
     else if (isHtml(path)) {
 
-        return loader.load([path]);
+        return loader.loadHtml(path);
     }
 };
 
@@ -118,9 +123,11 @@ var fetchAll = function (path, root, depId) {
             root: root
         });
 
-        loader.load([path], function (scripts) {
+        loader.loadJs([path], function (scripts) {
 
-            var result, scriptText = scripts[0], depModId;
+            var result,
+                scriptText = scripts[0],
+                depModId;
 
             mod.compile = new Function("module", scriptText);
             mod.deps = [];
@@ -159,6 +166,7 @@ var allLoaded = function (module) {
     module[entrance].status = 2;
 };
 
+//初始化，读取主文件中的依赖并递归生成依赖树
 (function () {
 
     var mainJs = (function () {
