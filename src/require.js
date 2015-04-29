@@ -168,7 +168,7 @@
         module[entrance].status = 2;
     };
 
-//初始化，读取主文件中的依赖并递归生成依赖树
+    //初始化，读取主文件中的依赖并递归生成依赖树
     (function () {
 
         var mainJs = (function () {

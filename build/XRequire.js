@@ -28,7 +28,6 @@ if (!window.console) {
         error: noop
     }
 }
-
 /*
  * 脚本/css文件加载器，支持加载js和css文件并解析，为XRequire提供底层支持，也可以单独使用
  * 其中js有异步和同步两种模式，异步模式下有两种子模式：异步下载并解析，异步下载但不解析
@@ -137,7 +136,7 @@ var loader = (function () {
         return xhrSync.responseText;
     };
 
-    //加载css/js文件，实例方法
+    //加载js文件，实例方法
     var loadJs = function () {
 
         //获取加载模式
@@ -232,6 +231,8 @@ var loader = (function () {
 
                         xhr.onreadystatechange = function () {
 
+                            var script;
+
                             if (this.readyState == 4) {
 
                                 if (this.status === 200) {
@@ -240,7 +241,7 @@ var loader = (function () {
                                     scripts.push(this.responseText);
 
                                     //向head插入一个script标签但制止浏览器自动解析脚本
-                                    var script = document.createElement('script');
+                                    script = document.createElement('script');
                                     insertScriptNotEval(script, this.src, this.responseText);
 
                                     //所有脚本下载完成后触发回调
@@ -258,7 +259,7 @@ var loader = (function () {
                             }
                         };
 
-                        xhr.send(null);
+                        xhr.send();
                     })();
                 }
             }
@@ -468,7 +469,7 @@ var loader = (function () {
         module[entrance].status = 2;
     };
 
-//初始化，读取主文件中的依赖并递归生成依赖树
+    //初始化，读取主文件中的依赖并递归生成依赖树
     (function () {
 
         var mainJs = (function () {
