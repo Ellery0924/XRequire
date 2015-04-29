@@ -111,7 +111,7 @@
             }
         }
 
-        if (!module[id] && !rotherFile.test(path)) {
+        if (!module[id] && isJs(path)) {
 
             module.pending++;
 
