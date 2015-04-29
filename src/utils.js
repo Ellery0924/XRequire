@@ -1,7 +1,3 @@
-/**
- * Created by Ellery1 on 15/4/27.
- */
-
 var inArray = function (arr, value) {
 
     var ret = -1;
