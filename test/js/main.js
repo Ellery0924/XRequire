@@ -12,7 +12,9 @@ console.log($().dialog);
 
 var mod1 = require('vendor/mod1');
 var mod3 = require('vendor/mod3');
+var html2 = require('tmpl/html2.html');
 
 mod1();
-
+console.log(mod3);
+console.log(html2);
 console.log(XRequire.module);
