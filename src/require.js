@@ -50,15 +50,9 @@
         return rotherFile.exec(path) ? !!rotherFile.exec(path)[1] : false;
     };
 
-    //判断是否是html文件
-    var isHtml = function (path) {
-
-        return rotherFile.exec(path) ? !!rotherFile.exec(path)[2] : false;
-    };
-
     var require = function (path) {
 
-        if (isJs(path)) {
+        if (!isCss(path)) {
 
             var id = path.replace(rJsfile, ''),
                 mod = module[id];
@@ -81,11 +75,6 @@
         else if (isCss(path)) {
 
             loader.loadCss(path);
-        }
-        //加载html文件
-        else if (isHtml(path)) {
-
-            return loader.loadHtml(path);
         }
     };
 
@@ -111,7 +100,7 @@
             }
         }
 
-        if (!module[id] && isJs(path)) {
+        if (!module[id]) {
 
             module.pending++;
 
@@ -125,13 +114,22 @@
                 root: root
             });
 
-            loader.loadJs([path], function (scripts) {
+            loader.load([path], function (scripts) {
 
                 var result,
                     scriptText = scripts[0],
                     depModId;
 
-                mod.compile = new Function("module", scriptText);
+                if (isJs(path)) {
+
+                    mod.compile = new Function("module", scriptText);
+                }
+                else if (!isCss(path)) {
+
+                    mod.compile = noop;
+                    mod.exports = scriptText;
+                }
+
                 mod.deps = [];
                 mod.status = 1;
 
@@ -194,7 +192,6 @@
     window.require = require;
     window.XRequire = {
         require: require,
-        loader: loader,
         module: module
     };
 })();

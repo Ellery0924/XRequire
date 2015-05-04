@@ -2,7 +2,7 @@
  * Created by Ellery1 on 15/4/27.
  */
 
-var mod1 = require('mod1');
+var mod1 = require('vendor/mod1');
 
 module.exports = {
     mod: 'mod2',

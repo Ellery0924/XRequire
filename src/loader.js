@@ -107,7 +107,7 @@ var loader = (function () {
     };
 
     //加载js文件，实例方法
-    var loadJs = function () {
+    var load = function () {
 
         //获取加载模式
         var mod = option.mod,
@@ -256,16 +256,10 @@ var loader = (function () {
         head.appendChild(link);
     };
 
-    var loadHtml = function (path) {
-
-        return sendSyncRequest(modifyPath(path));
-    };
-
     return {
         config: config,
-        loadJs: loadJs,
+        load: load,
         loadCss: loadCss,
-        loadHtml: loadHtml,
         globalEval: globalEval
     };
 })();
