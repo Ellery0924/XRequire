@@ -288,10 +288,16 @@ var loader = (function () {
         head.appendChild(link);
     };
 
+    var loadHtml = function (file) {
+
+        return _sendSyncRequest(_modifyPath(file));
+    };
+
     return {
         config: config,
         load: load,
         loadCss: loadCss,
+        loadHtml: loadHtml,
         globalEval: globalEval
     };
 })();
