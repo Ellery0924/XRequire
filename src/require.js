@@ -93,6 +93,9 @@
 
         root = depId ? root : '';
 
+        //防止模块自己引用自己
+        depRelations.push(depId + ' ' + depId);
+
         //检查循环引用
         if (depId) {
 
@@ -192,6 +195,10 @@
     window.require = require;
     window.XRequire = {
         require: require,
-        module: module
+        getModule: function () {
+
+            return module;
+        },
+        loader: loader
     };
 })();
