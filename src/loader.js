@@ -40,6 +40,8 @@ var loader = (function () {
                 option[key] = opt[key];
             }
         }
+
+        return this;
     };
 
     //全局eval，实例方法
@@ -54,7 +56,7 @@ var loader = (function () {
     };
 
     //工具函数，向document.head中插入一个script标签，但阻止浏览器自动解析其中的js代码
-    var insertScriptNotEval = function (script, src, scriptText) {
+    var _insertScriptNotEval = function (script, src, scriptText) {
 
         head.appendChild(script);
 
@@ -71,7 +73,7 @@ var loader = (function () {
     //判断是否为绝对路径或者以http://开头的url
     //如果是以上两种情况，忽略root而直接使用传入的绝对路径
     //如果不是，则在所有传入的路径前加上root
-    var modifyPath = function (path) {
+    var _modifyPath = function (path) {
 
         var root = option.root ? option.root.replace(rlastSlash, '') + "/" : "",
             isAbsoluteUrl = rabsoluteUrl.test(path);
@@ -80,7 +82,7 @@ var loader = (function () {
     };
 
     //工具函数，为script/link标签设置附加属性
-    var setAttr = function (file, script, isJs) {
+    var _setAttr = function (file, script, isJs) {
 
         for (var attr in file) {
 
@@ -92,7 +94,7 @@ var loader = (function () {
     };
 
     //工具函数，发送一个同步ajax请求
-    var sendSyncRequest = function (src) {
+    var _sendSyncRequest = function (src) {
 
         var xhrSync = new XMLHttpRequest();
         xhrSync.open("GET", src, false);
@@ -139,7 +141,7 @@ var loader = (function () {
             //修正file对象
             file = typeof file === 'object' ? file : {path: file};
             //修正src
-            src = modifyPath(file.path);
+            src = _modifyPath(file.path);
             script = document.createElement('script');
 
             //同步加载模式
@@ -147,16 +149,16 @@ var loader = (function () {
             //之后插入script标签，并且通过一些很奇怪的方法阻止浏览器自动解析新插入的script标签
             if (isSync) {
 
-                resText = sendSyncRequest(src);
+                resText = _sendSyncRequest(src);
 
                 //手动解析js代码
                 globalEval(resText);
 
-                insertScriptNotEval(script, src, resText);
+                _insertScriptNotEval(script, src, resText);
 
                 scripts.push(script);
 
-                setAttr(file, script, true);
+                _setAttr(file, script, true);
             }
             //异步加载
             else {
@@ -184,7 +186,7 @@ var loader = (function () {
 
                     scripts.push(script);
 
-                    setAttr(file, script, true);
+                    _setAttr(file, script, true);
                 }
                 //特殊模式，异步下载脚本但不解析
                 else if (isAsyncNotEval) {
@@ -212,7 +214,7 @@ var loader = (function () {
 
                                     //向head插入一个script标签但制止浏览器自动解析脚本
                                     script = document.createElement('script');
-                                    insertScriptNotEval(script, this.src, this.responseText);
+                                    _insertScriptNotEval(script, this.src, this.responseText);
 
                                     //所有脚本下载完成后触发回调
                                     if (--count === 0) {
@@ -220,7 +222,7 @@ var loader = (function () {
                                         callback(scripts);
                                     }
 
-                                    setAttr(this.file, script, true);
+                                    _setAttr(this.file, script, true);
                                 }
                                 else {
 
@@ -248,10 +250,10 @@ var loader = (function () {
         var link = document.createElement('link'),
             rel = file.rel || "stylesheet";
 
-        link.href = modifyPath(file.path);
+        link.href = _modifyPath(file.path);
         link.rel = rel;
 
-        setAttr(file, link, false);
+        _setAttr(file, link, false);
 
         head.appendChild(link);
     };

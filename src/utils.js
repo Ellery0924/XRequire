@@ -1,4 +1,4 @@
-var inArray = function (arr, value) {
+var _inArray = function (arr, value) {
 
     var ret = -1;
 
@@ -12,15 +12,15 @@ var inArray = function (arr, value) {
     return ret;
 };
 
-var noop = function () {
+var _noop = function () {
 };
 
 //shim console
 if (!window.console) {
 
     window.console = {
-        log: noop,
-        warn: noop,
-        error: noop
+        log: _noop,
+        warn: _noop,
+        error: _noop
     }
 }

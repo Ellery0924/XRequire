@@ -33,26 +33,26 @@
         baseUrl;
 
     //修正baseUrl
-    var getBaseUrl = function (url) {
+    var _getBaseUrl = function (url) {
 
         return url ? url.replace(rlastSlash, '') + "/" : "";
     };
 
     //判断是否是js文件，如果文件不以.css/.html/.htm结尾，都认为是js文件
-    var isJs = function (path) {
+    var _isJs = function (path) {
 
         return !rotherFile.test(path);
     };
 
     //判断是否是css文件
-    var isCss = function (path) {
+    var _isCss = function (path) {
 
         return rotherFile.exec(path) ? !!rotherFile.exec(path)[1] : false;
     };
 
     var require = function (path) {
 
-        if (!isCss(path)) {
+        if (!_isCss(path)) {
 
             var id = path.replace(rJsfile, ''),
                 mod = module[id];
@@ -72,13 +72,19 @@
             return mod.exports;
         }
         //加载css文件
-        else if (isCss(path)) {
+        else if (_isCss(path)) {
 
             loader.loadCss(path);
         }
     };
 
-    var fetchAll = function (path, root, depId) {
+    var _allLoaded = function (module) {
+
+        module[entrance].compile(module);
+        module[entrance].status = 2;
+    };
+
+    var _fetchAll = function (path, root, depId) {
 
         var id = path.replace(rJsfile, ''),
             mod,
@@ -90,7 +96,7 @@
         //检查循环引用
         if (depId) {
 
-            if (inArray(depRelations, depRelation) === -1) {
+            if (_inArray(depRelations, depRelation) === -1) {
 
                 depRelations.push(reverse);
             }
@@ -120,13 +126,13 @@
                     scriptText = scripts[0],
                     depModId;
 
-                if (isJs(path)) {
+                if (_isJs(path)) {
 
                     mod.compile = new Function("module", scriptText);
                 }
-                else if (!isCss(path)) {
+                else if (!_isCss(path)) {
 
-                    mod.compile = noop;
+                    mod.compile = _noop;
                     mod.exports = scriptText;
                 }
 
@@ -137,16 +143,16 @@
 
                     depModId = result[1];
 
-                    if (inArray(mod.deps, depModId) === -1) {
+                    if (_inArray(mod.deps, depModId) === -1) {
 
                         mod.deps.push(depModId);
 
-                        if (!rJsfile.test(depModId) && isJs(depModId)) {
+                        if (!rJsfile.test(depModId) && _isJs(depModId)) {
 
                             depModId = depModId + ".js";
                         }
 
-                        fetchAll(depModId, baseUrl, mod.id);
+                        _fetchAll(depModId, baseUrl, mod.id);
                     }
                 }
 
@@ -154,16 +160,10 @@
 
                 if (module.pending === 0) {
 
-                    allLoaded(module);
+                    _allLoaded(module);
                 }
             });
         }
-    };
-
-    var allLoaded = function (module) {
-
-        module[entrance].compile(module);
-        module[entrance].status = 2;
     };
 
     //初始化，读取主文件中的依赖并递归生成依赖树
@@ -183,10 +183,10 @@
             })(),
             dataMain = mainJs.getAttribute('data-main');
 
-        baseUrl = getBaseUrl(mainJs.getAttribute('baseUrl'));
+        baseUrl = _getBaseUrl(mainJs.getAttribute('baseUrl'));
         entrance = dataMain.replace(rJsfile, '');
 
-        fetchAll(dataMain, baseUrl);
+        _fetchAll(dataMain, baseUrl);
     })();
 
     window.require = require;
