@@ -133,6 +133,7 @@
 
                     mod.compile = new Function("module", scriptText);
                 }
+                //处理html的情况，直接将responseText设为exports
                 else if (!_isCss(path)) {
 
                     mod.compile = _noop;
@@ -142,6 +143,7 @@
                 mod.deps = [];
                 mod.status = 1;
 
+                //递归加载依赖
                 while (result = rRequire.exec(scriptText)) {
 
                     depModId = result[1];
