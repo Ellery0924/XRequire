@@ -20,7 +20,7 @@
     var rRequire = /require\s*\(\s*['"]\s*([^()"']+)\s*['"]\s*\)/g,
         rlastSlash = /\/$/,
         rJsfile = /\.js$/,
-        rotherFile = /(?:(\.css)|(\.html))$/;
+        rotherFile = /(?:(\.css)|(\.htm[l]?))$/;
 
     //主文件
     var entrance,
