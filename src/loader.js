@@ -25,7 +25,7 @@ var loader = (function () {
     //正则表达式
     var rinvalidAttr = /^\s*(src|href|type|path|rel)\s*$/,
     //是否为绝对路径
-        rabsoluteUrl = /^\s*(?:http:\/\/|\/|\.\/|\.\.\/)/,
+        rabsoluteUrl = /^\s*(?:http[s]?:\/\/|\/|\.\/|\.\.\/)/,
         rlastSlash = /\/$/;
 
     var head = document.head || document.getElementsByTagName('head')[0];
